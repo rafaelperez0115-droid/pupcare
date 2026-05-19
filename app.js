@@ -916,36 +916,142 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function drawWeightChart(){
       const canvas = $("#weightChart");
+      if(!canvas) return;
+
+      // ── Ajustar resolución al DPR del dispositivo (pantallas Retina) ────────
+      const dpr    = window.devicePixelRatio || 1;
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+      // Colores según el tema activo
+      const COLOR_LINE    = "#6d5efc";
+      const COLOR_DOT_BG  = isDark ? "#1e293b" : "#ffffff";
+      const COLOR_GRID    = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.07)";
+      const COLOR_AXIS    = isDark ? "rgba(255,255,255,0.35)" : "rgba(0,0,0,0.35)";
+      const COLOR_LABEL   = isDark ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.50)";
+
+      // Tamaño lógico del canvas (el CSS controla el ancho visible)
+      const cssW = canvas.offsetWidth  || 600;
+      const cssH = canvas.offsetHeight || 200;
+      canvas.width  = cssW * dpr;
+      canvas.height = cssH * dpr;
+      canvas.style.width  = cssW + "px";
+      canvas.style.height = cssH + "px";
+
       const ctx = canvas.getContext("2d");
-      const w = canvas.width, h = canvas.height;
-      ctx.clearRect(0,0,w,h);
+      ctx.scale(dpr, dpr);           // escalar para DPR
+      ctx.clearRect(0, 0, cssW, cssH);
+
       const data = appState.weightLogs;
       if(data.length === 0) return;
-      
-      const pad = 24;
-      const max = Math.max(...data.map(d => d.weight)) + 1;
-      const min = Math.min(...data.map(d => d.weight)) - 1;
 
-      const points = data.map((d, i) => {
-        const x = pad + (i * ((w-pad*2) / (data.length - 1 || 1)));
-        const y = h - pad - ((d.weight - min) / (max - min || 1)) * (h - pad*2);
-        return {x,y,...d};
-      });
+      // ── Márgenes: izquierda amplia para el eje Y, abajo para el eje X ───────
+      const padL = 52;   // eje Y (etiquetas de peso)
+      const padR = 20;
+      const padT = 16;
+      const padB = 36;   // eje X (etiquetas de fecha)
 
+      const chartW = cssW - padL - padR;
+      const chartH = cssH - padT - padB;
+
+      // ── Calcular rango del eje Y con ticks limpios ───────────────────────────
+      const rawMax = Math.max(...data.map(d => d.weight));
+      const rawMin = Math.min(...data.map(d => d.weight));
+      const range  = rawMax - rawMin || 1;
+
+      // Elegir un intervalo "redondo" para los ticks del eje Y
+      const roughStep = range / 4;
+      const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep || 1)));
+      const niceStep  = Math.ceil(roughStep / magnitude) * magnitude || 1;
+      const yMin = Math.floor(rawMin / niceStep) * niceStep;
+      const yMax = Math.ceil(rawMax  / niceStep) * niceStep;
+      const yRange = yMax - yMin || niceStep;
+
+      // Función para convertir un peso a coordenada Y
+      const toY = (val) => padT + chartH - ((val - yMin) / yRange) * chartH;
+      // Función para convertir índice de punto a coordenada X
+      const toX = (i)   => padL + (data.length === 1 ? chartW / 2 : i * (chartW / (data.length - 1)));
+
+      // ── Líneas de cuadrícula horizontales + etiquetas eje Y ─────────────────
+      ctx.font      = `${11 * (cssW < 400 ? 0.85 : 1)}px 'Plus Jakarta Sans', sans-serif`;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+
+      let tick = yMin;
+      while(tick <= yMax + 0.001){
+        const y = toY(tick);
+        // Línea de cuadrícula
+        ctx.beginPath();
+        ctx.moveTo(padL, y); ctx.lineTo(padL + chartW, y);
+        ctx.strokeStyle = COLOR_GRID;
+        ctx.lineWidth   = 1;
+        ctx.stroke();
+        // Etiqueta eje Y
+        const unit = (data[data.length-1].unit || "kg");
+        ctx.fillStyle = COLOR_LABEL;
+        ctx.fillText(tick % 1 === 0 ? tick + " " + unit : tick.toFixed(1) + " " + unit, padL - 6, y);
+        tick = Math.round((tick + niceStep) * 1000) / 1000;
+      }
+
+      // ── Línea del eje Y (borde izquierdo) ────────────────────────────────────
       ctx.beginPath();
-      points.forEach((p,i)=>{ if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); });
-      ctx.strokeStyle = "#6d5efc"; ctx.lineWidth = 4; ctx.stroke();
+      ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + chartH);
+      ctx.strokeStyle = COLOR_AXIS;
+      ctx.lineWidth   = 1;
+      ctx.stroke();
 
-      points.forEach(p=>{
-        ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2);
-        ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#fff';
-        ctx.fill(); ctx.stroke();
+      // ── Calcular puntos ───────────────────────────────────────────────────────
+      const points = data.map((d, i) => ({ x: toX(i), y: toY(d.weight), ...d }));
+
+      // ── Área rellena bajo la línea (degradado suave) ──────────────────────────
+      const grad = ctx.createLinearGradient(0, padT, 0, padT + chartH);
+      grad.addColorStop(0,   isDark ? "rgba(109,94,252,0.28)" : "rgba(109,94,252,0.18)");
+      grad.addColorStop(1,   "rgba(109,94,252,0.00)");
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, padT + chartH);
+      points.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(points[points.length-1].x, padT + chartH);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // ── Línea principal ───────────────────────────────────────────────────────
+      ctx.beginPath();
+      points.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+      ctx.strokeStyle = COLOR_LINE;
+      ctx.lineWidth   = 3;
+      ctx.lineJoin    = "round";
+      ctx.lineCap     = "round";
+      ctx.stroke();
+
+      // ── Puntos + etiquetas eje X ──────────────────────────────────────────────
+      ctx.font         = `${11 * (cssW < 400 ? 0.85 : 1)}px 'Plus Jakarta Sans', sans-serif`;
+      ctx.textAlign    = "center";
+      ctx.textBaseline = "top";
+
+      points.forEach((p, i) => {
+        // Punto (círculo)
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+        ctx.fillStyle   = COLOR_DOT_BG;
+        ctx.strokeStyle = COLOR_LINE;
+        ctx.lineWidth   = 2.5;
+        ctx.fill();
+        ctx.stroke();
+
+        // Etiqueta de fecha en el eje X
+        const label = new Date(p.date + "T00:00:00")
+          .toLocaleDateString("es-ES", { day:"numeric", month:"short" });
+        ctx.fillStyle = COLOR_LABEL;
+        ctx.fillText(label, p.x, padT + chartH + 7);
       });
-      $("#chartFooter").innerHTML = data.map((d, i) => {
-        const display = d.originalValue ? `${d.originalValue} ${d.unit||'kg'}` : `${d.weight} kg`;
-        const realIdx = appState.weightLogs.findIndex(w => w.date === d.date && w.weight === d.weight);
+
+      // ── Actualizar el footer con botones de edición (debajo del canvas) ───────
+      $("#chartFooter").innerHTML = data.map((d) => {
+        const display  = d.originalValue ? `${d.originalValue} ${d.unit||'kg'}` : `${d.weight} kg`;
+        const realIdx  = appState.weightLogs.findIndex(w => w.date === d.date && w.weight === d.weight);
+        const dateLabel = new Date(d.date + "T00:00:00").toLocaleDateString("es-ES",{day:"numeric",month:"short"});
         return `<span class="chart-foot-item">
-          <span>${new Date(d.date + "T00:00:00").toLocaleDateString("es-ES",{month:"short"})}: <strong>${display}</strong></span>
+          <span>${dateLabel}: <strong>${display}</strong></span>
           <span class="chart-foot-actions">
             <button class="chart-foot-btn" onclick="editWeightLog(${realIdx})" title="Editar">✏️</button>
             <button class="chart-foot-btn" onclick="deleteItem('weightLogs',${realIdx},'el registro de peso')" title="Eliminar">🗑️</button>
