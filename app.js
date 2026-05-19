@@ -712,6 +712,14 @@ document.addEventListener('DOMContentLoaded', function() {
     window.openDrawer = openDrawer; window.closeDrawer = closeDrawer; window.createNewPet = createNewPet;
     window.addVaccine = addVaccine; window.addWeightLog = addWeightLog; window.addFeedingLog = addFeedingLog; window.addActivity = addActivity; window.addCare = addCare; window.addDeworm = addDeworm; window.addMedication = addMedication; window.addVisit = addVisit; window.addBehavior = addBehavior;
 
+    // ── Funciones llamadas desde onclick en el HTML ───────────────────────────
+    window.openSettings     = openSettings;
+    window.closeSettings    = closeSettings;
+    window.loginUser        = loginUser;
+    window.logoutUser       = logoutUser;
+    window.loginWithGoogle  = loginWithGoogle;
+    window.registerUser     = registerUser;
+
     function renderHeaderAndHero(){
       const avatarBox = $("#petAvatar");
       if(appState.pet.avatar){
