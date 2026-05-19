@@ -346,8 +346,14 @@
   <!-- LIGHTBOX DEL ÁLBUM -->
   <div class="lightbox" id="lightbox" onclick="closeLightbox()">
     <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <!-- Contador de fotos -->
+    <div class="lightbox-counter" id="lightboxCounter" onclick="event.stopPropagation()"></div>
+    <!-- Botón anterior -->
+    <button class="lightbox-nav lightbox-prev" id="lightboxPrev" onclick="event.stopPropagation();navigateLightbox(-1)" title="Foto anterior">&#8249;</button>
     <img id="lightboxImg" src="" alt="Foto del cachorro" onclick="event.stopPropagation()">
-    <div class="lightbox-info">
+    <!-- Botón siguiente -->
+    <button class="lightbox-nav lightbox-next" id="lightboxNext" onclick="event.stopPropagation();navigateLightbox(1)" title="Foto siguiente">&#8250;</button>
+    <div class="lightbox-info" onclick="event.stopPropagation()">
       <strong id="lightboxMonth"></strong>
       <span id="lightboxNote"></span>
     </div>

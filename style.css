@@ -135,7 +135,13 @@
     
     .chart-box{ height:220px; border-radius:24px; background: var(--surface-strong); border:1px solid var(--line); padding:12px 12px 18px; display:flex; flex-direction:column; justify-content:space-between; }
     canvas{ width:100%; height:160px; display:block; }
-    .chart-footer{ display:flex; justify-content:space-between; gap:10px; color:var(--muted); font-size:.78rem; padding:0 4px; }
+    .chart-footer{ display:flex; flex-wrap:wrap; gap:8px 14px; color:var(--muted); font-size:.78rem; padding:6px 4px 2px; }
+    .chart-foot-item{ display:inline-flex; align-items:center; gap:5px; }
+    .chart-foot-actions{ display:inline-flex; gap:2px; opacity:0; transition:opacity .15s; }
+    .chart-foot-item:hover .chart-foot-actions,
+    .chart-foot-item:focus-within .chart-foot-actions{ opacity:1; }
+    .chart-foot-btn{ background:none; border:none; cursor:pointer; font-size:.8rem; padding:2px 5px; border-radius:6px; line-height:1; transition:.15s ease; }
+    .chart-foot-btn:hover{ background:var(--surface-strong); }
     
     .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
     .hidden{ display:none !important; }
@@ -355,7 +361,14 @@
     .lightbox-info{ color:#fff; text-align:center; }
     .lightbox-info strong{ display:block; font-size:1.1rem; margin-bottom:4px; }
     .lightbox-info span{ font-size:.85rem; opacity:.7; }
-    .lightbox-close{ position:absolute; top:20px; right:20px; width:44px; height:44px; border-radius:14px; border:none; background:rgba(255,255,255,.15); color:#fff; font-size:1.2rem; cursor:pointer; display:grid; place-items:center; backdrop-filter:blur(4px); }
+    .lightbox-close{ position:absolute; top:20px; right:20px; width:44px; height:44px; border-radius:14px; border:none; background:rgba(255,255,255,.15); color:#fff; font-size:1.2rem; cursor:pointer; display:grid; place-items:center; backdrop-filter:blur(4px); z-index:1; }
+    .lightbox-counter{ position:absolute; top:22px; left:50%; transform:translateX(-50%); background:rgba(255,255,255,.15); color:#fff; font-size:.8rem; font-weight:700; padding:6px 14px; border-radius:20px; backdrop-filter:blur(4px); white-space:nowrap; }
+    .lightbox-nav{ position:absolute; top:50%; transform:translateY(-50%); width:48px; height:48px; border-radius:50%; border:none; background:rgba(255,255,255,.18); color:#fff; font-size:2rem; cursor:pointer; display:grid; place-items:center; backdrop-filter:blur(4px); transition:.2s ease; line-height:1; z-index:1; }
+    .lightbox-nav:hover{ background:rgba(109,94,252,.7); transform:translateY(-50%) scale(1.08); }
+    .lightbox-nav:active{ transform:translateY(-50%) scale(.95); }
+    .lightbox-prev{ left:16px; }
+    .lightbox-next{ right:16px; }
+    .lightbox-nav:disabled{ opacity:.25; cursor:default; pointer-events:none; }
 
     /* =============================================
        MOBILE BASE (default — all screens < 600px)
@@ -438,6 +451,9 @@
     /* Sección album en móvil */
     .album-header{ flex-wrap:wrap; gap:10px; }
     .album-grid{ grid-template-columns:repeat(2, 1fr); gap:10px; }
+    .lightbox-nav{ width:40px; height:40px; font-size:1.6rem; }
+    .lightbox-prev{ left:6px; }
+    .lightbox-next{ right:6px; }
 
     /* Lightbox en móvil */
     .lightbox img{ max-height:60vh; border-radius:14px; }

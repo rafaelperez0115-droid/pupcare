@@ -655,6 +655,59 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     }
 
+    // ── Editar registro de peso ───────────────────────────────────────────────
+    function editWeightLog(index){
+      const log = appState.weightLogs[index];
+      if(!log) return;
+      const existing = document.getElementById("editWeightModal");
+      if(existing) existing.remove();
+      const displayVal  = log.originalValue !== undefined ? log.originalValue : log.weight;
+      const displayUnit = log.unit || "kg";
+      const modal = document.createElement("div");
+      modal.id = "editWeightModal";
+      modal.style.cssText = "position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)";
+      modal.innerHTML = `
+        <div style="background:var(--surface);border-radius:24px;padding:24px;width:100%;max-width:380px;border:1px solid var(--line);box-shadow:var(--shadow)">
+          <h3 style="font-size:1.1rem;font-weight:800;margin-bottom:4px">✏️ Editar registro de peso</h3>
+          <p style="font-size:.8rem;color:var(--muted);margin-bottom:18px">Corrige la fecha o el valor</p>
+          <label style="font-size:.8rem;color:var(--muted);font-weight:700;display:block;margin-bottom:6px">FECHA</label>
+          <input id="editWeightDate" class="input" type="date" value="${log.date}" style="margin-bottom:14px">
+          <label style="font-size:.8rem;color:var(--muted);font-weight:700;display:block;margin-bottom:6px">PESO (${displayUnit})</label>
+          <input id="editWeightValue" class="input" type="number" step="0.1" min="0" value="${displayVal}" placeholder="Ej: 13.5" style="margin-bottom:22px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <button class="ghost-btn" onclick="document.getElementById('editWeightModal').remove()">Cancelar</button>
+            <button class="primary-btn" onclick="saveEditWeight(${index},'${displayUnit}')">Guardar</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener("click", (e) => { if(e.target === modal) modal.remove(); });
+    }
+    window.editWeightLog = editWeightLog;
+
+    async function saveEditWeight(index, unit){
+      const newDate  = document.getElementById("editWeightDate")?.value;
+      const newValue = parseFloat(document.getElementById("editWeightValue")?.value);
+      if(!newDate || isNaN(newValue) || newValue <= 0){
+        return showToast("Completa fecha y peso válido.", "warning");
+      }
+      const weightKg = unit === "lb" ? +(newValue * 0.453592).toFixed(2) : newValue;
+      appState.weightLogs[index] = {
+        ...appState.weightLogs[index],
+        date: newDate,
+        weight: weightKg,
+        unit: unit,
+        originalValue: newValue
+      };
+      appState.weightLogs.sort((a,b) => new Date(a.date) - new Date(b.date));
+      const last = appState.weightLogs[appState.weightLogs.length - 1];
+      appState.pet.currentWeight = `${last.originalValue || last.weight} ${last.unit || "kg"}`;
+      await saveLocal();
+      renderAll();
+      document.getElementById("editWeightModal")?.remove();
+      showToast("Peso actualizado ✅", "success");
+    }
+    window.saveEditWeight = saveEditWeight;
+
     // ===== EDITAR VACUNA =====
     function editVaccine(index) {
       const v = appState.vaccines[index];
@@ -888,9 +941,16 @@ document.addEventListener('DOMContentLoaded', function() {
         ctx.fillStyle = document.documentElement.getAttribute('data-theme') === 'dark' ? '#1e293b' : '#fff';
         ctx.fill(); ctx.stroke();
       });
-      $("#chartFooter").innerHTML = data.map(d => {
+      $("#chartFooter").innerHTML = data.map((d, i) => {
         const display = d.originalValue ? `${d.originalValue} ${d.unit||'kg'}` : `${d.weight} kg`;
-        return `<span>${new Date(d.date + "T00:00:00").toLocaleDateString("es-ES",{month:"short"})}: <strong>${display}</strong></span>`;
+        const realIdx = appState.weightLogs.findIndex(w => w.date === d.date && w.weight === d.weight);
+        return `<span class="chart-foot-item">
+          <span>${new Date(d.date + "T00:00:00").toLocaleDateString("es-ES",{month:"short"})}: <strong>${display}</strong></span>
+          <span class="chart-foot-actions">
+            <button class="chart-foot-btn" onclick="editWeightLog(${realIdx})" title="Editar">✏️</button>
+            <button class="chart-foot-btn" onclick="deleteItem('weightLogs',${realIdx},'el registro de peso')" title="Eliminar">🗑️</button>
+          </span>
+        </span>`;
       }).join("");
     }
 
@@ -1147,22 +1207,52 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>`).join("");
     }
 
+    // Orden actual de fotos para la navegación (sincronizado con renderAlbum)
+    let _lightboxOrder = [];
+
     function openLightbox(id){
-      const photo = appState.album?.find(p => p.id === id);
-      if(!photo) return;
-      document.getElementById("lightboxImg").src = photo.url || photo.img || "";
-      document.getElementById("lightboxMonth").textContent = photo.month;
-      document.getElementById("lightboxNote").textContent = photo.note || "";
-      document.getElementById("lightbox").dataset.activeId = id;
+      // Reconstruir el orden igual que renderAlbum (por número de mes)
+      _lightboxOrder = [...(appState.album || [])].sort(
+        (a, b) => extractMonthNumber(a.month) - extractMonthNumber(b.month)
+      );
+      _showLightboxPhoto(id);
       document.getElementById("lightbox").classList.add("open");
       document.body.style.overflow = "hidden";
     }
+
+    function _showLightboxPhoto(id){
+      const photo = _lightboxOrder.find(p => p.id === id);
+      if(!photo) return;
+      const idx   = _lightboxOrder.indexOf(photo);
+      const total = _lightboxOrder.length;
+
+      document.getElementById("lightboxImg").src         = photo.url || photo.img || "";
+      document.getElementById("lightboxMonth").textContent = photo.month;
+      document.getElementById("lightboxNote").textContent  = photo.note || "";
+      document.getElementById("lightbox").dataset.activeId = id;
+
+      // Contador "2 / 5"
+      document.getElementById("lightboxCounter").textContent = `${idx + 1} / ${total}`;
+
+      // Habilitar/deshabilitar botones en los extremos
+      document.getElementById("lightboxPrev").disabled = idx === 0;
+      document.getElementById("lightboxNext").disabled = idx === total - 1;
+    }
+
+    function navigateLightbox(dir){
+      const currentId = document.getElementById("lightbox").dataset.activeId;
+      const idx = _lightboxOrder.findIndex(p => p.id === currentId);
+      const next = _lightboxOrder[idx + dir];
+      if(next) _showLightboxPhoto(next.id);
+    }
+
     function closeLightbox(){
       document.getElementById("lightbox").classList.remove("open");
       document.body.style.overflow = "";
     }
-    window.openLightbox  = openLightbox;
-    window.closeLightbox = closeLightbox;
+    window.openLightbox     = openLightbox;
+    window.closeLightbox    = closeLightbox;
+    window.navigateLightbox = navigateLightbox;
     window.saveAlbumPhoto   = saveAlbumPhoto;
     window.closeAlbumModal  = closeAlbumModal;
 
@@ -1237,7 +1327,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.addEventListener("keydown", (e) => {
-      if(e.key === "Escape") closeLightbox();
+      if(e.key === "Escape")     closeLightbox();
+      if(e.key === "ArrowLeft")  navigateLightbox(-1);
+      if(e.key === "ArrowRight") navigateLightbox(1);
+    });
+
+    // Swipe táctil en el lightbox
+    let _touchStartX = 0;
+    const lb = document.getElementById("lightbox");
+    lb.addEventListener("touchstart", (e) => { _touchStartX = e.changedTouches[0].clientX; }, { passive: true });
+    lb.addEventListener("touchend",   (e) => {
+      const diff = e.changedTouches[0].clientX - _touchStartX;
+      if(Math.abs(diff) > 50) navigateLightbox(diff < 0 ? 1 : -1);
     });
 
 });
