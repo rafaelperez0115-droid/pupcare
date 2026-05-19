@@ -22,7 +22,17 @@
     button, a, [onclick], .tab-btn, .quick, .chip, .dur-btn, .icon-btn, .ghost-btn, .primary-btn, .tile, .task-item, .log-item, .album-card, .setting-item, .unit-card, .scale-opt { -webkit-tap-highlight-color: transparent; outline: none; -webkit-touch-callout: none; }
     button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
     html { scroll-behavior: smooth; }
-    body{ margin:0; font-family:"Plus Jakarta Sans", sans-serif; background: var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; transition: background 0.3s ease, color 0.3s ease; }
+    body{
+      margin:0;
+      font-family:"Plus Jakarta Sans", sans-serif;
+      background: var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      overflow-x:hidden;
+      transition: background 0.3s ease, color 0.3s ease;
+      /* Empuja el contenido por debajo de la status bar / isla dinámica */
+      padding-top: env(safe-area-inset-top, 0px);
+    }
     
     body::before{ content:""; position:fixed; inset:0; pointer-events:none; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 26px 26px; mask-image: linear-gradient(180deg, rgba(0,0,0,.12), transparent 60%); z-index:0; transition: opacity 0.3s ease;}
     
@@ -31,7 +41,7 @@
     button, input, textarea, select{ font:inherit; }
 
     /* PANTALLA DE LOGIN INICIAL */
-    #loginScreen { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; }
+    #loginScreen { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: calc(env(safe-area-inset-top,24px) + 24px) 24px 24px; text-align: center; }
     #loginScreen .brand-mark { width: 80px; height: 80px; font-size: 40px; margin-bottom: 20px; box-shadow: var(--shadow); }
     
     /* INTERFAZ PRINCIPAL (Oculta por defecto) */
@@ -40,7 +50,26 @@
     .app-shell{ position:relative; z-index:1; max-width:var(--max); margin:0 auto; min-height:100vh; padding:24px 18px 120px; }
     
     /* TOPBAR Y BOTÓN DE AJUSTES */
-    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; animation:fadeUp .7s ease both; }
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin-bottom:18px; animation:fadeUp .7s ease both;
+      /* Sticky: se queda arriba al hacer scroll */
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      /* Fondo con blur para que el contenido que pasa por debajo se vea bien */
+      background: var(--bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      /* Margen negativo + padding para cubrir el espacio del notch */
+      margin-top: calc(-1 * env(safe-area-inset-top, 0px));
+      padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+      padding-bottom: 12px;
+      margin-left: -14px;
+      margin-right: -14px;
+      padding-left: 14px;
+      padding-right: 14px;
+    }
     .brand{ display:flex; align-items:center; gap:12px; }
     .brand-mark{ width:46px; height:46px; border-radius:16px; background:linear-gradient(135deg, #1a0f3c, #2d1b69); box-shadow:var(--shadow-soft); position:relative; overflow:hidden; flex-shrink:0; }
     .brand-mark svg{ width:100%; height:100%; }
@@ -245,7 +274,7 @@
     /* =============================================
        LOADING SPINNER & ESTADOS DE CARGA
        ============================================= */
-    #loadingScreen{ position:fixed; inset:0; z-index:9998; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; transition:opacity .35s ease; }
+    #loadingScreen{ position:fixed; inset:0; z-index:9998; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; transition:opacity .35s ease; padding-top:env(safe-area-inset-top,0px); }
     #loadingScreen.hidden{ opacity:0; pointer-events:none; }
     .spinner{ width:48px; height:48px; border:4px solid var(--line); border-top-color:var(--primary); border-radius:50%; animation:spin .75s linear infinite; }
     @keyframes spin{ to{ transform:rotate(360deg); } }
@@ -339,8 +368,8 @@
     .form-grid{ display:grid; grid-template-columns:1fr; gap:10px; }
     .quick-actions{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
 
-    /* App shell — padding respeta el notch y la tabbar */
-    .app-shell{ padding:env(safe-area-inset-top, 16px) 14px calc(90px + env(safe-area-inset-bottom)) 14px; }
+    /* App shell — la topbar sticky ya gestiona el safe-area-top; solo necesitamos el bottom */
+    .app-shell{ padding:0 14px calc(90px + env(safe-area-inset-bottom)) 14px; }
 
     /* Hero compacto en móvil */
     .hero-top{ display:flex; flex-direction:column; gap:14px; align-items:flex-start; margin-bottom:14px; }

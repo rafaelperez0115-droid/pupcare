@@ -4,8 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>PupCare PWA — Centro de control</title>
-  <meta name="theme-color" content="#6d5efc" />
+  <!-- theme-color dinámico: el navegador elige el que coincide con el esquema activo -->
+  <meta name="theme-color" content="#f4f6fb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <!-- black-translucent: el contenido sube bajo la status bar; nosotros la manejamos con safe-area -->
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PupCare">
   <link rel="icon" href="icons/icon-192.png" type="image/png">
@@ -17,6 +20,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="style.css">
+  <!-- ── Anti-flicker: aplica el tema ANTES del primer paint ── -->
+  <script>
+    (function(){
+      var t = localStorage.getItem("theme");
+      // Si el usuario eligió dark, o si no eligió nada pero el SO está en dark
+      var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if(t === "dark" || (!t && prefersDark)){
+        document.documentElement.setAttribute("data-theme","dark");
+        // Actualizar el meta theme-color al color oscuro de inmediato
+        var metas = document.querySelectorAll('meta[name="theme-color"]');
+        metas.forEach(function(m){ m.setAttribute("content","#0f172a"); });
+      }
+    })();
+  </script>
 </head>
 <body>
 

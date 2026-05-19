@@ -1,14 +1,32 @@
 /* PupCare — Lógica principal de la aplicación */
 /* Generado en Paso 3 de refactorización */
 
+document.addEventListener('DOMContentLoaded', function() {
+
     // 0. GESTIÓN DEL TEMA
     const themeToggle = document.getElementById('themeToggle');
     const currentTheme = localStorage.getItem('theme');
     if (currentTheme === 'dark') { document.documentElement.setAttribute('data-theme', 'dark'); themeToggle.checked = true; }
+    function syncThemeColor(isDark){
+      // Sincroniza el color de la barra de estado del SO con el tema activo
+      var color = isDark ? "#0f172a" : "#f4f6fb";
+      document.querySelectorAll('meta[name="theme-color"]').forEach(function(m){
+        m.setAttribute("content", color);
+      });
+    }
     themeToggle.addEventListener('change', function(e) {
-      if (e.target.checked) { document.documentElement.setAttribute('data-theme', 'dark'); localStorage.setItem('theme', 'dark'); } 
-      else { document.documentElement.removeAttribute('data-theme'); localStorage.setItem('theme', 'light'); }
+      if (e.target.checked) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        syncThemeColor(true);
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+        syncThemeColor(false);
+      }
     });
+    // Sincronizar al cargar (por si el anti-flicker ya aplicó dark)
+    syncThemeColor(document.documentElement.getAttribute('data-theme') === 'dark');
 
     function openSettings() { document.getElementById('settingsDrawer').classList.add('open'); }
     function closeSettings() { document.getElementById('settingsDrawer').classList.remove('open'); }
@@ -29,16 +47,14 @@
       const saved = localStorage.getItem("fontScale");
       if(saved && saved !== "1"){
         document.documentElement.style.setProperty("--font-scale", saved);
-        // Marcar el botón activo cuando el DOM esté listo
-        document.addEventListener("DOMContentLoaded", () => {
-          const btn = document.querySelector(`.scale-opt[data-scale="${saved}"]`);
-          if(btn){
-            document.querySelectorAll(".scale-opt").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            const preview = document.getElementById("scalePreview");
-            if(preview) preview.textContent = "Tamaño actual: " + (SCALE_LABELS[saved] || saved);
-          }
-        });
+        // DOM ya disponible (estamos dentro de DOMContentLoaded)
+        const btn = document.querySelector(`.scale-opt[data-scale="${saved}"]`);
+        if(btn){
+          document.querySelectorAll(".scale-opt").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          const preview = document.getElementById("scalePreview");
+          if(preview) preview.textContent = "Tamaño actual: " + (SCALE_LABELS[saved] || saved);
+        }
       }
     })();
     window.setScale = setScale;
@@ -1192,18 +1208,18 @@
     }
     window.saveEditPhoto = saveEditPhoto;
 
-    document.addEventListener("DOMContentLoaded", () => {
-      setupEvents();
-      setupReveal();
-      setupAlbum();
+    // Inicializar la app (DOM ya disponible dentro del DOMContentLoaded exterior)
+    setupEvents();
+    setupReveal();
+    setupAlbum();
 
-      document.getElementById("confirmOkBtn").addEventListener("click", () => {
-        if(_confirmCallback) _confirmCallback();
-        closeConfirm();
-      });
-
-      document.addEventListener("keydown", (e) => {
-        if(e.key === "Escape") closeLightbox();
-      });
+    document.getElementById("confirmOkBtn").addEventListener("click", () => {
+      if(_confirmCallback) _confirmCallback();
+      closeConfirm();
     });
-  </script>
+
+    document.addEventListener("keydown", (e) => {
+      if(e.key === "Escape") closeLightbox();
+    });
+
+});
