@@ -34,21 +34,41 @@
       min-height:100vh;
       overflow-x:hidden;
       transition: background 0.4s ease, color 0.4s ease;
-      padding-top: env(safe-area-inset-top, 0px);
+      /* Sin padding-top aquí: la topbar sticky lo gestiona con safe-area */
+      padding-top: 0;
     }
     /* Gradiente de fondo ambiental */
     [data-theme="dark"] body,
     body{ background-attachment: fixed; }
     [data-theme="dark"]{ background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(109,94,252,.22) 0%, transparent 70%), radial-gradient(ellipse 60% 40% at 90% 90%, rgba(167,139,250,.10) 0%, transparent 60%), #080b14; }
+    /* Cubre el área de la status bar con el color exacto de la topbar
+       para que no haya franja de color distinto entre el sistema y la app */
+    body::after{
+      content:"";
+      position:fixed;
+      top:0; left:0; right:0;
+      height:env(safe-area-inset-top, 0px);
+      background:rgba(8,11,20,.85);
+      backdrop-filter:blur(28px);
+      -webkit-backdrop-filter:blur(28px);
+      z-index:45;
+      pointer-events:none;
+    }
     
     body::before{ content:""; position:fixed; inset:0; pointer-events:none; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 26px 26px; mask-image: linear-gradient(180deg, rgba(0,0,0,.10), transparent 55%); z-index:0; transition: opacity 0.3s ease;}
+    /* En modo claro el ::after usa el color del tema claro */
+    :root:not([data-theme="dark"]) body::after{
+      background: rgba(240,239,254,.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
     
     h1,h2,h3,h4,h5{ margin:0; font-family:"Manrope", sans-serif; letter-spacing:-.03em; }
     p{ margin:0; color:var(--muted); }
     button, input, textarea, select{ font:inherit; }
 
     /* PANTALLA DE LOGIN INICIAL */
-    #loginScreen { position: fixed; inset: 0; z-index: 9999; background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(109,94,252,.3) 0%, transparent 70%), #080b14; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: calc(env(safe-area-inset-top,24px) + 24px) 24px 24px; text-align: center; }
+    #loginScreen { position: fixed; inset: 0; z-index: 9999; background: radial-gradient(ellipse 80% 60% at 20% 0%, rgba(109,94,252,.35) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 100%, rgba(167,139,250,.15) 0%, transparent 60%), #080b14; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: calc(env(safe-area-inset-top,24px) + 24px) 24px 24px; text-align: center; }
     #loginScreen .brand-mark { width: 80px; height: 80px; font-size: 40px; margin-bottom: 20px; box-shadow: var(--shadow); }
     
     /* INTERFAZ PRINCIPAL (Oculta por defecto) */
@@ -60,18 +80,17 @@
     .topbar{
       display:flex; align-items:center; justify-content:space-between; gap:12px;
       margin-bottom:18px; animation:fadeUp .7s ease both;
-      /* Sticky: se queda arriba al hacer scroll */
       position: sticky;
       top: 0;
-      z-index: 40;
-      /* Fondo con blur para que el contenido que pasa por debajo se vea bien */
-      background: rgba(8,11,20,.55);
+      z-index: 41;
+      /* Mismo color/blur que el ::after del body para continuidad visual */
+      background: rgba(8,11,20,.85);
       backdrop-filter: blur(28px);
       -webkit-backdrop-filter: blur(28px);
-      /* Margen negativo + padding para cubrir el espacio del notch */
-      margin-top: calc(-1 * env(safe-area-inset-top, 0px));
-      padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+      /* La topbar empieza justo en top:0 (debajo del ::after que ya cubrió el notch) */
+      padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
       padding-bottom: 12px;
+      margin-top: calc(-1 * env(safe-area-inset-top, 0px));
       margin-left: -14px;
       margin-right: -14px;
       padding-left: 14px;
