@@ -1486,9 +1486,17 @@ document.addEventListener('DOMContentLoaded', function() {
       const sorted = [...appState.album].sort((a, b) =>
         extractMonthNumber(a.month) - extractMonthNumber(b.month)
       );
+      // Construir el HTML de las tarjetas SIN incluir el reporte dentro del template
+      // (el reporte puede contener comillas/backticks que rompen el template string)
+      const reporteMap = {};
+      sorted.forEach(p => { if(p.reporte) reporteMap[p.id] = p.reporte; });
+
       grid.innerHTML = sorted.map(p => {
-        const tieneReporte = p.reporte && p.reporte.trim().length > 0;
+        const tieneReporte = !!(p.reporte && p.reporte.trim().length > 0);
         const imgUrl = p.url || p.img || "";
+        const btnAnalizar = tieneReporte
+          ? `<button class="btn-reanalizar-ia" onclick="generarReporteFotoExistente('${p.id}')" title="Volver a analizar">🔄</button>`
+          : `<button class="btn-analizar-ia"   onclick="generarReporteFotoExistente('${p.id}')" title="Analizar con IA">🤖 Analizar con IA</button>`;
         return `<div class="album-card" data-id="${p.id}">
           <div class="album-foto-wrap" onclick="openLightbox('${p.id}')">
             <img src="${imgUrl}" alt="${p.month}" loading="lazy">
@@ -1498,22 +1506,25 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
           </div>
           <div class="album-card-actions">
-            ${!tieneReporte
-              ? `<button class="btn-analizar-ia" onclick="generarReporteFotoExistente('${p.id}')" title="Analizar con IA">
-                  🤖 Analizar con IA
-                </button>`
-              : `<button class="btn-reanalizar-ia" onclick="generarReporteFotoExistente('${p.id}')" title="Volver a analizar">
-                  🔄
-                </button>`
-            }
+            ${btnAnalizar}
             <button class="album-edit"   onclick="editAlbumPhoto('${p.id}')"   title="Editar">✏️</button>
             <button class="album-delete" onclick="deleteAlbumPhoto('${p.id}')" title="Eliminar">🗑️</button>
           </div>
-          <div class="reporte-ai" style="display:${tieneReporte ? 'block' : 'none'}">
-            ${tieneReporte ? p.reporte : ""}
-          </div>
+          <div class="reporte-ai" style="display:${tieneReporte ? 'block' : 'none'}"></div>
         </div>`;
       }).join("");
+
+      // Inyectar el HTML del reporte DESPUÉS de construir el DOM
+      // Así evitamos que comillas o backticks del reporte rompan el template
+      sorted.forEach(p => {
+        if(!reporteMap[p.id]) return;
+        const card = grid.querySelector(`.album-card[data-id="${p.id}"]`);
+        const box  = card?.querySelector(".reporte-ai");
+        if(box){
+          box.innerHTML    = reporteMap[p.id];
+          box.style.display = "block";
+        }
+      });
     }
 
     // ── Generar reporte IA para una foto ya existente en el álbum ───────────
@@ -1567,17 +1578,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const idx = appState.album.findIndex(p => p.id === photoId);
         if(idx !== -1) appState.album[idx].reporte = reporteHtml;
 
-        // 6. Actualizar el DOM directamente sin re-renderizar todo
+        // 6. Actualizar el DOM — primero intentar actualización directa,
+        //    luego re-renderizar el álbum completo como garantía
         if(reporteBox){
-          reporteBox.innerHTML = reporteHtml;
+          reporteBox.innerHTML    = reporteHtml;
+          reporteBox.style.display = "block";
         }
-        // Cambiar botón a 🔄 (ya analizado)
         if(btnAnalizar){
           btnAnalizar.className   = "btn-reanalizar-ia";
           btnAnalizar.disabled    = false;
           btnAnalizar.textContent = "🔄";
           btnAnalizar.title       = "Volver a analizar";
         }
+        // Re-renderizar siempre para garantizar consistencia visual
+        renderAlbum();
         showToast("¡Análisis de Guts completado! 🧠", "success");
 
       } catch(err){
