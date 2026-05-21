@@ -529,3 +529,100 @@
       .fab{ right:24px; bottom:108px; width:58px; height:58px; font-size:1.5rem; }
       #toastContainer{ bottom:108px; }
     }
+
+    /* ═══════════════════════════════════════════════════════
+       AVATAR — ANILLO DEGRADADO GIRATORIO
+    ═══════════════════════════════════════════════════════ */
+    .avatar-ring-wrap{ position:relative; display:inline-block; }
+    .avatar-ring{
+      position:absolute; inset:-5px; border-radius:calc(var(--radius-md) + 5px);
+      background:conic-gradient(from 0deg, #6d5efc, #a78bfa, #34d399, #f59e0b, #6d5efc);
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: destination-out;
+      mask-composite: exclude;
+      padding:3px; border-radius:calc(var(--radius-md) + 6px);
+      animation: ring-spin 4s linear infinite;
+      pointer-events:none;
+    }
+    @keyframes ring-spin{ from{ filter:hue-rotate(0deg); } to{ filter:hue-rotate(360deg); } }
+
+    /* ═══════════════════════════════════════════════════════
+       HERO — MINI STATS (Vacunas / Fotos / Paseos)
+    ═══════════════════════════════════════════════════════ */
+    .hero-mini-stats{
+      display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;
+    }
+    .hero-stat{
+      display:flex; flex-direction:column; align-items:center;
+      border-radius:12px; padding:6px 10px; min-width:52px;
+    }
+    .hero-stat span{ font-size:16px; font-weight:900; line-height:1; }
+    .hero-stat small{ font-size:9px; color:rgba(255,255,255,.4); margin-top:2px; font-weight:600; }
+    .hero-stat-p{ background:rgba(109,94,252,.15); border:1px solid rgba(109,94,252,.25); }
+    .hero-stat-p span{ color:#a78bfa; }
+    .hero-stat-g{ background:rgba(52,211,153,.10); border:1px solid rgba(52,211,153,.2); }
+    .hero-stat-g span{ color:#34d399; }
+    .hero-stat-a{ background:rgba(245,158,11,.10); border:1px solid rgba(245,158,11,.18); }
+    .hero-stat-a span{ color:#f59e0b; }
+
+    /* ═══════════════════════════════════════════════════════
+       ALERTAS URGENTES (píldoras parpadeantes)
+    ═══════════════════════════════════════════════════════ */
+    .upcoming-alerts{
+      display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;
+    }
+    .alert-pill{
+      display:inline-flex; align-items:center; gap:6px;
+      border-radius:20px; padding:5px 12px; font-size:11px; font-weight:700;
+    }
+    .alert-red{ background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.3); color:#fc8181; }
+    .alert-amber{ background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.28); color:#fbbf24; }
+    .alert-dot{
+      width:7px; height:7px; border-radius:50%; flex-shrink:0;
+      animation: dot-blink 1.4s ease infinite;
+    }
+    .alert-red .alert-dot{ background:#ef4444; }
+    .alert-amber .alert-dot{ background:#f59e0b; }
+    @keyframes dot-blink{ 0%,100%{ opacity:1; } 50%{ opacity:.25; } }
+
+    /* ═══════════════════════════════════════════════════════
+       TAREAS — BARRA DE URGENCIA + BOTONES ✓ ✕
+    ═══════════════════════════════════════════════════════ */
+    .task-prog-bar{
+      height:3px; background:rgba(255,255,255,.07); border-radius:2px;
+      margin-top:5px; overflow:hidden;
+    }
+    .task-prog-fill{ height:100%; border-radius:2px; transition:width .5s ease; }
+    .pf-red   { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .pf-amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .pf-purple{ background:linear-gradient(90deg,#6d5efc,#a78bfa); }
+
+    .task-count{
+      font-size:10px; font-weight:800; padding:3px 8px; border-radius:8px; white-space:nowrap;
+    }
+    .ec-red   { background:rgba(239,68,68,.15); color:#fc8181; border:1px solid rgba(239,68,68,.2); }
+    .ec-amber { background:rgba(245,158,11,.12); color:#fbbf24; border:1px solid rgba(245,158,11,.18); }
+    .ec-green { background:rgba(52,211,153,.10); color:#34d399; border:1px solid rgba(52,211,153,.15); }
+
+    .task-actions-btns{ display:flex; gap:4px; }
+    .btn-task-ok, .btn-task-skip{
+      width:30px; height:30px; border-radius:9px; border:none;
+      cursor:pointer; font-size:13px; font-weight:900;
+      display:flex; align-items:center; justify-content:center;
+      transition:.15s ease; flex-shrink:0;
+    }
+    .btn-task-ok  { background:rgba(52,211,153,.18); color:#34d399; }
+    .btn-task-ok:hover { background:rgba(52,211,153,.35); transform:scale(1.08); }
+    .btn-task-skip{ background:rgba(239,68,68,.12); color:#fc8181; }
+    .btn-task-skip:hover{ background:rgba(239,68,68,.28); transform:scale(1.08); }
+
+    .task-badge{
+      font-size:10px; font-weight:800; padding:4px 9px; border-radius:9px; white-space:nowrap;
+    }
+    .badge-done{ background:rgba(52,211,153,.15); color:#34d399; border:1px solid rgba(52,211,153,.25); }
+    .badge-skip{ background:rgba(239,68,68,.10); color:#fc8181; border:1px solid rgba(239,68,68,.18); }
+
+    .task-done .item-title{ color:rgba(255,255,255,.4); text-decoration:line-through; }
+    .task-done{ border-color:rgba(52,211,153,.2) !important; background:rgba(52,211,153,.04) !important; }
+    .task-skip .item-title{ color:rgba(255,255,255,.3); text-decoration:line-through; }
+    .task-skip{ border-color:rgba(239,68,68,.15) !important; background:rgba(239,68,68,.03) !important; opacity:.75; }

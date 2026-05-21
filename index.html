@@ -189,7 +189,10 @@
                 <div class="pet-profile">
                   <div>
                     <div class="avatar-wrap">
-                      <div class="avatar" id="petAvatar" style="background-position: center; background-size: cover;">🐾</div>
+                      <div class="avatar-ring-wrap">
+                        <div class="avatar" id="petAvatar" style="background-position: center; background-size: cover;">🐾</div>
+                        <div class="avatar-ring" aria-hidden="true"></div>
+                      </div>
                       <button class="avatar-edit" id="changePhotoBtn" title="Cambiar foto">📷</button>
                       <input type="file" id="photoInput" accept="image/*" class="hidden" />
                     </div>
@@ -200,6 +203,12 @@
                       <span id="petBreedText">Cargando...</span><span>•</span>
                       <span id="petAgeText">--</span><span>•</span>
                       <span id="petWeightText">--</span>
+                    </div>
+                    <!-- Mini estadísticas del héroe -->
+                    <div class="hero-mini-stats">
+                      <div class="hero-stat hero-stat-p"><span id="heroStatVac">0</span><small>Vacunas</small></div>
+                      <div class="hero-stat hero-stat-g"><span id="heroStatPics">0</span><small>Fotos</small></div>
+                      <div class="hero-stat hero-stat-a"><span id="heroStatWalk">0</span><small>Paseos</small></div>
                     </div>
                   </div>
                 </div>
@@ -218,6 +227,7 @@
             <div class="grid-2">
               <article class="card reveal">
                 <div class="section-head"><h2>Próximas tareas</h2><button class="ghost-btn" data-open-drawer="task">+ Añadir</button></div>
+                <div class="upcoming-alerts" id="upcomingAlerts" style="display:none"></div>
                 <div class="task-list" id="upcomingTasks"></div>
               </article>
               <article class="card reveal">

@@ -801,6 +801,14 @@ document.addEventListener('DOMContentLoaded', function() {
       const de = appState.deworming[0];
       $("#dewormText").textContent = de ? "Activa" : "Sin plan";
       $("#dewormDateText").textContent = de ? `Próxima en ${daysUntil(de.nextDate)} días` : "—";
+
+      // ── Mini stats en la tarjeta hero ─────────────────────────────────────
+      const statVac  = document.getElementById("heroStatVac");
+      const statPics = document.getElementById("heroStatPics");
+      const statWalk = document.getElementById("heroStatWalk");
+      if(statVac)  statVac.textContent  = appState.vaccines.length;
+      if(statPics) statPics.textContent = (appState.album || []).length;
+      if(statWalk) statWalk.textContent = appState.activity.filter(a => a.type === "Paseo").length;
     }
 
     function relativeFromDate(dateStr){ const d = daysUntil(dateStr); return d === null ? "Sin fecha" : (d === 0 ? "Hoy" : (d < 0 ? `Hace ${Math.abs(d)} días` : `En ${d} días`)); }
@@ -814,13 +822,75 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderUpcomingTasks(){
-      const html = collectUpcomingTasks().map(t => `
-        <div class="task-item">
+      const tasks = collectUpcomingTasks();
+
+      // ── Calcular alertas urgentes (≤7 días) ──────────────────────────────
+      const urgent = tasks.filter(t => {
+        const d = daysUntil(t.date);
+        return d !== null && d >= 0 && d <= 7;
+      });
+      const alertBox = document.getElementById("upcomingAlerts");
+      if(alertBox){
+        if(urgent.length > 0){
+          alertBox.innerHTML = urgent.map(t => {
+            const d = daysUntil(t.date);
+            const isRed = d <= 2;
+            return `<div class="alert-pill ${isRed ? 'alert-red' : 'alert-amber'}">
+              <span class="alert-dot"></span>
+              <span>${t.title} — ${d === 0 ? 'hoy' : d === 1 ? 'mañana' : `${d} días`}</span>
+            </div>`;
+          }).join("");
+          alertBox.style.display = "flex";
+        } else {
+          alertBox.style.display = "none";
+        }
+      }
+
+      // ── Renderizar lista con barra de urgencia ────────────────────────────
+      const html = tasks.map(t => {
+        const d     = daysUntil(t.date);
+        const isRed = d !== null && d <= 2;
+        const isAmb = d !== null && d > 2 && d <= 7;
+        const countColor = isRed ? "ec-red" : isAmb ? "ec-amber" : "ec-green";
+        const countLabel = d === null ? "" : d === 0 ? "Hoy" : d < 0 ? "Vencida" : `${d}d`;
+        const progW = d === null ? 80 : Math.max(5, Math.min(100, 100 - (d / 30 * 100)));
+        const progCls = isRed ? "pf-red" : isAmb ? "pf-amber" : "pf-purple";
+        const taskStatus = appState.taskStatus || {};
+        const statusKey  = `${t.title}_${t.date}`;
+        const st = taskStatus[statusKey];
+        let actionHtml = "";
+        if(st === "done")   actionHtml = `<span class="task-badge badge-done">✓ Hecho</span>`;
+        else if(st === "skip") actionHtml = `<span class="task-badge badge-skip">✕ Omitida</span>`;
+        else actionHtml = `<div class="task-actions-btns">
+          <button class="btn-task-ok"  onclick="setTaskStatus('${statusKey}','done')">✓</button>
+          <button class="btn-task-skip" onclick="setTaskStatus('${statusKey}','skip')">✕</button>
+        </div>`;
+
+        return `<div class="task-item ${st === 'done' ? 'task-done' : st === 'skip' ? 'task-skip' : ''}">
           <div class="badge-icon">${t.icon}</div>
-          <div><div class="item-title">${t.title}</div><div class="item-meta">${formatDate(t.date)}</div></div>
-        </div>`).join("");
+          <div style="flex:1;min-width:0">
+            <div class="item-title">${t.title}</div>
+            <div class="item-meta">${formatDate(t.date)}</div>
+            <div class="task-prog-bar"><div class="task-prog-fill ${progCls}" style="width:${progW}%"></div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+            ${d !== null ? `<span class="task-count ${countColor}">${countLabel}</span>` : ""}
+            ${actionHtml}
+          </div>
+        </div>`;
+      }).join("");
       $("#upcomingTasks").innerHTML = html || `<p style="color:var(--muted);font-size:.85rem;padding:10px 0">No hay tareas próximas. ¡Todo al día! 🎉</p>`;
     }
+
+    // ── Confirmar / omitir una tarea ──────────────────────────────────────────
+    async function setTaskStatus(key, status){
+      if(!appState.taskStatus) appState.taskStatus = {};
+      appState.taskStatus[key] = status;
+      await saveLocal();
+      renderAll();
+      showToast(status === "done" ? "¡Tarea completada! ✅" : "Tarea omitida.", status === "done" ? "success" : "info");
+    }
+    window.setTaskStatus = setTaskStatus;
 
     function renderRecentActivity(){
       $("#recentActivity").innerHTML = appState.activity.filter(a => a.type !== "Comportamiento").slice(0,4).map((a,i) => `
