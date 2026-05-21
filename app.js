@@ -1385,6 +1385,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const data = await res.json();
+        console.log("📦 Respuesta de la Netlify Function:", JSON.stringify(data).substring(0, 200));
         return data.reporte || "";
       } catch (e) {
         console.warn("⚠️ Reporte IA no disponible:", e.message);
@@ -1578,20 +1579,33 @@ document.addEventListener('DOMContentLoaded', function() {
         const idx = appState.album.findIndex(p => p.id === photoId);
         if(idx !== -1) appState.album[idx].reporte = reporteHtml;
 
-        // 6. Actualizar el DOM — primero intentar actualización directa,
-        //    luego re-renderizar el álbum completo como garantía
-        if(reporteBox){
-          reporteBox.innerHTML    = reporteHtml;
-          reporteBox.style.display = "block";
+        // 6. Log de diagnóstico para verificar el reporte recibido
+        console.log("✅ Reporte recibido de Gemini:", reporteHtml?.substring(0, 120));
+        console.log("✅ Longitud del reporte:", reporteHtml?.length);
+
+        // 7. Verificar que el reporte tiene contenido real
+        if(!reporteHtml || reporteHtml.trim().length < 10){
+          throw new Error("Gemini devolvió una respuesta vacía o inválida.");
         }
-        if(btnAnalizar){
-          btnAnalizar.className   = "btn-reanalizar-ia";
-          btnAnalizar.disabled    = false;
-          btnAnalizar.textContent = "🔄";
-          btnAnalizar.title       = "Volver a analizar";
+
+        // 8. Guardar en appState primero (renderAlbum lo leerá de aquí)
+        const idx2 = appState.album.findIndex(p => p.id === photoId);
+        if(idx2 !== -1){
+          appState.album[idx2].reporte = reporteHtml;
+          console.log("✅ Reporte guardado en appState, índice:", idx2);
+        } else {
+          console.warn("⚠️ No se encontró la foto en appState con id:", photoId);
         }
-        // Re-renderizar siempre para garantizar consistencia visual
+
+        // 9. Re-renderizar el álbum completo — lee de appState que ya tiene el reporte
         renderAlbum();
+
+        // 10. Scroll suave a la tarjeta actualizada
+        setTimeout(() => {
+          const updatedCard = document.querySelector(`.album-card[data-id="${photoId}"]`);
+          if(updatedCard) updatedCard.scrollIntoView({ behavior:"smooth", block:"nearest" });
+        }, 150);
+
         showToast("¡Análisis de Guts completado! 🧠", "success");
 
       } catch(err){
